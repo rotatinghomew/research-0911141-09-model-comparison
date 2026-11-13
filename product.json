@@ -1,0 +1,20 @@
+{
+  "name": "教学模型比较记录簿",
+  "focus": "各候选的原始预测与成本",
+  "options": [
+    [
+      "dataset",
+      "数据集",
+      [
+        "all",
+        "short_tasks",
+        "case_tasks",
+        "mixed_tasks"
+      ]
+    ]
+  ],
+  "selection": {
+    "dataset": "all"
+  },
+  "purpose": "本地研究资料浏览与复核记录"
+}
