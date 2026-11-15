@@ -2,6 +2,8 @@
 
 predictions 一行对应某 candidate、split 下一个 observation 的预测；observation 可跨重复分折出现，subject_id 标识同一学生来源。splits 给出 train_ids、test_ids、repeat、fold 和 release。candidate 的 created_after_release 标记已知选型历史；views 记录查看或改指标，不伪造未看过的保留集。truth 为二分类，score 为正类概率，latency_ms 为实测成本。
 
+重复分折的测试集可能完全相同：比较时按测试集内容合并成“分折簇”，不按 repeat 或预测行数计样本量。release 相同的分折属于同一次发布；改指标或发布后加入的候选会污染该发布，不能当作独立后续资料。详见 `docs/comparison.md`。
+
 ## 数据版本
 
 `fixtures/data.json` 是可直接导入的一份完整材料，`product.json` 保存页面默认范围。导入必须提交完整对象，不把省略字段解释为删除补丁；以规范化 JSON 的 SHA-256 标识内容，同内容多次导入复用版本。原始记录只追加版本，保存的分析材料始终指向原来版本。
@@ -10,4 +12,4 @@ predictions 一行对应某 candidate、split 下一个 observation 的预测；
 
 ## 目录
 
-`model_comparison/domain.py` 提供现行领域校验和描述，`validation.py` 处理基础引用与数值校验，`service.py` 连接领域操作和材料存档，`storage.py` 负责内容寻址数据与历史记录，`server.py` 提供本地接口。`web/app.js` 使用接口构建交互页面，不自行推导独立口径。
+`model_comparison/domain.py` 提供现行领域校验和描述，`validation.py` 处理基础引用与数值校验，`comparison.py` 实现配对比较、分折簇与证据等级，`service.py` 连接领域操作和材料存档，`storage.py` 负责内容寻址数据与历史记录，`server.py` 提供本地接口。`web/app.js` 使用接口构建交互页面，不自行推导独立口径。

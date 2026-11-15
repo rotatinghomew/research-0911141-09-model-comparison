@@ -39,6 +39,21 @@ class Store:
                     revision TEXT NOT NULL REFERENCES datasets(revision),
                     selection TEXT NOT NULL, result TEXT NOT NULL, created_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS freezes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL,
+                    revision TEXT NOT NULL REFERENCES datasets(revision),
+                    selection TEXT NOT NULL, spec TEXT NOT NULL,
+                    data_sha256 TEXT NOT NULL, scope_sha256 TEXT NOT NULL,
+                    status TEXT NOT NULL, reasons TEXT NOT NULL, created_at TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS comparisons (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL,
+                    freeze_id INTEGER REFERENCES freezes(id),
+                    revision TEXT NOT NULL REFERENCES datasets(revision),
+                    selection TEXT NOT NULL, spec TEXT NOT NULL,
+                    assessment TEXT NOT NULL, result TEXT NOT NULL,
+                    deviated INTEGER NOT NULL, created_at TEXT NOT NULL
+                );
             """)
 
     @contextmanager
@@ -68,6 +83,13 @@ class Store:
         with self.connection() as connection:
             return [dict(row) for row in connection.execute(
                 "SELECT revision,label,created_at FROM datasets ORDER BY created_at DESC,revision")]
+
+    def dataset_created_at(self, revision):
+        with self.connection() as connection:
+            row = connection.execute("SELECT created_at FROM datasets WHERE revision=?", (revision,)).fetchone()
+        if row is None:
+            raise LookupError("数据版本不存在")
+        return row["created_at"]
 
     def dataset(self, revision):
         with self.connection() as connection:
@@ -99,5 +121,72 @@ class Store:
         result = dict(row)
         for field in ["selection", "result"]:
             result[field] = json.loads(result[field])
+        result["dataset"] = self.dataset(result["revision"])
+        return result
+
+    def freeze(self, title, revision, selection, spec, data_sha256, scope_sha256,
+               status, reasons):
+        if not isinstance(title, str) or not title.strip() or len(title) > 160:
+            raise ValueError("冻结名称应为1至160字")
+        with self.connection() as connection:
+            if connection.execute("SELECT 1 FROM datasets WHERE revision=?", (revision,)).fetchone() is None:
+                raise LookupError("数据版本不存在")
+            cursor = connection.execute(
+                "INSERT INTO freezes(title,revision,selection,spec,data_sha256,scope_sha256,status,reasons,created_at)"
+                " VALUES(?,?,?,?,?,?,?,?,?)",
+                (title.strip(), revision, encode(selection), encode(spec), data_sha256,
+                 scope_sha256, status, encode(reasons), datetime.now(timezone.utc).isoformat()))
+            identifier = cursor.lastrowid
+        return self.freeze_record(identifier)
+
+    def freezes(self):
+        with self.connection() as connection:
+            return [dict(row) for row in connection.execute(
+                "SELECT id,title,revision,status,created_at FROM freezes ORDER BY id DESC")]
+
+    def freeze_record(self, identifier):
+        with self.connection() as connection:
+            row = connection.execute("SELECT * FROM freezes WHERE id=?", (identifier,)).fetchone()
+        if row is None:
+            raise LookupError("冻结记录不存在")
+        result = dict(row)
+        for field in ["selection", "spec", "reasons"]:
+            result[field] = json.loads(result[field])
+        result["dataset"] = self.dataset(result["revision"])
+        return result
+
+    def compare_record(self, title, freeze_id, revision, selection, spec, assessment,
+                       result, deviated):
+        if not isinstance(title, str) or not title.strip() or len(title) > 160:
+            raise ValueError("比较名称应为1至160字")
+        with self.connection() as connection:
+            if connection.execute("SELECT 1 FROM datasets WHERE revision=?", (revision,)).fetchone() is None:
+                raise LookupError("数据版本不存在")
+            if freeze_id is not None:
+                if connection.execute("SELECT 1 FROM freezes WHERE id=?", (freeze_id,)).fetchone() is None:
+                    raise LookupError("冻结记录不存在")
+            cursor = connection.execute(
+                "INSERT INTO comparisons(title,freeze_id,revision,selection,spec,assessment,result,deviated,created_at)"
+                " VALUES(?,?,?,?,?,?,?,?,?)",
+                (title.strip(), freeze_id, revision, encode(selection), encode(spec),
+                 encode(assessment), encode(result), 1 if deviated else 0,
+                 datetime.now(timezone.utc).isoformat()))
+            identifier = cursor.lastrowid
+        return self.comparison(identifier)
+
+    def comparisons(self):
+        with self.connection() as connection:
+            return [dict(row) for row in connection.execute(
+                "SELECT id,title,freeze_id,revision,created_at FROM comparisons ORDER BY id DESC")]
+
+    def comparison(self, identifier):
+        with self.connection() as connection:
+            row = connection.execute("SELECT * FROM comparisons WHERE id=?", (identifier,)).fetchone()
+        if row is None:
+            raise LookupError("比较记录不存在")
+        result = dict(row)
+        for field in ["selection", "spec", "assessment", "result"]:
+            result[field] = json.loads(result[field])
+        result["deviated"] = bool(result["deviated"])
         result["dataset"] = self.dataset(result["revision"])
         return result

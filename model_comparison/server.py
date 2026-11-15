@@ -40,6 +40,16 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, self.workbench.store.dataset(revision))
             if parsed.path == "/api/notebooks":
                 return self.send(200, self.workbench.store.notebooks())
+            if parsed.path == "/api/freezes":
+                return self.send(200, self.workbench.store.freezes())
+            if parsed.path.startswith("/api/freezes/"):
+                identifier = parsed.path.rsplit("/", 1)[-1]
+                return self.send(200, self.workbench.freeze_record(identifier))
+            if parsed.path == "/api/comparisons":
+                return self.send(200, self.workbench.store.comparisons())
+            if parsed.path.startswith("/api/comparisons/"):
+                identifier = parsed.path.rsplit("/", 1)[-1]
+                return self.send(200, self.workbench.comparison(identifier))
             if parsed.path.startswith("/api/notebooks/"):
                 identifier = parsed.path.rsplit("/", 1)[-1]
                 return self.send(200, self.workbench.store.notebook(identifier))
@@ -65,6 +75,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(201, self.workbench.upload(body))
             if self.path == "/api/notebooks":
                 return self.send(201, self.workbench.save(body))
+            if self.path == "/api/compare":
+                return self.send(200, self.workbench.compare(body))
+            if self.path == "/api/freezes":
+                return self.send(201, self.workbench.freeze(body))
+            if self.path == "/api/comparisons":
+                return self.send(201, self.workbench.compare(body, store_result=True))
             self.send(404, {"error": "路径不存在"})
         except LookupError as error:
             self.send(404, {"error": str(error)})

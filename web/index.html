@@ -5,9 +5,42 @@
 <main><aside><h2>数据与范围</h2><label>数据版本<select id="revision"></select></label><div id="controls"></div>
 <button id="inspect">查看所选范围</button><label>导入完整数据<input id="upload" type="file" accept=".json,application/json"></label>
 <button id="raw">查看原始记录</button><h2>分析记录</h2><label>记录名称<input id="title" value="本次复核"></label>
-<button id="save">保存当前描述</button><div id="archive"></div></aside>
+<button id="save">保存当前描述</button><div id="archive"></div>
+<h2>候选比较</h2>
+<label>指标<select id="metric"></select></label>
+<label>判定阈值<input id="threshold" type="number" min="0" max="1" step="0.01" value="0.5"></label>
+<label>漏判成本<input id="fn-cost" type="number" min="0" step="0.5" value="10"></label>
+<label>误报成本<input id="fp-cost" type="number" min="0" step="0.5" value="1"></label>
+<label>每毫秒推理成本<input id="latency-cost" type="number" min="0" step="0.1" value="0.5"></label>
+<label>最低覆盖率<input id="min-coverage" type="number" min="0" max="1" step="0.05" value="0.9"></label>
+<label>漏判率上限（留空不限）<input id="max-fn" type="number" min="0" max="1" step="0.01" placeholder="不限"></label>
+<label>平均时延上限（留空不限）<input id="max-latency" type="number" min="0" step="1" placeholder="不限"></label>
+<fieldset id="candidates"><legend>参与比较的候选（冻结后不可增删）</legend></fieldset>
+<button id="freeze">冻结当次候选、指标与证据范围</button>
+<button id="compare">比较候选（冻结后运行）</button>
+<button id="save-comparison">保存本次比较材料</button>
+<p class="hint" id="freeze-state">尚未冻结。未冻结的比较一律记为探索。</p>
+<div id="freeze-archive"></div><div id="comparison-archive"></div>
+</aside>
 <section><div id="status" role="status">正在读取本地数据…</div><div id="summary"></div>
 <h2>各候选的原始预测与成本</h2><div id="notes"></div><canvas id="chart" width="960" height="300" aria-label="所选范围描述图"></canvas>
 <div class="table-wrap"><table><thead id="columns"></thead><tbody id="rows"></tbody></table></div>
 <h2 id="detail-heading">记录与依据</h2><pre id="details">点击记录行可查看详细字段。</pre><button id="export">导出当前记录</button>
-</section></main><footer>仅使用本地虚构记录；描述统计不替代研究设计与业务复核。</footer><script src="/app.js"></script></body></html>
+
+<h2 id="compare-heading">候选比较</h2>
+<div id="compare-status" role="status">尚未运行比较。先冻结候选、指标与证据范围，再运行比较。</div>
+<div id="assessment"></div>
+<div id="compare-notes"></div>
+<h3>同一评测对象上的候选描述</h3><p class="hint" id="joint-hint"></p>
+<div class="table-wrap"><table><thead id="summary-columns"></thead><tbody id="summary-rows"></tbody></table></div>
+<h3>配对差异与不确定性</h3><p class="hint">区间同时考虑分折簇与学生的重采样；正值表示左侧候选更好。结论可以为“不足以区分”。</p>
+<canvas id="pair-chart" width="960" height="240" aria-label="候选配对差异区间"></canvas>
+<div class="table-wrap"><table><thead id="pair-columns"></thead><tbody id="pair-rows"></tbody></table></div>
+<h3>数据集之间与重复分折</h3><div id="decomposition"></div>
+<h3>推理成本与漏判代价</h3><div id="constraints"></div>
+<div class="table-wrap"><table><thead id="constraint-columns"></thead><tbody id="constraint-rows"></tbody></table></div>
+<h3>原始误判</h3><label>按候选筛选<select id="misjudgment-filter"></select></label>
+<div class="table-wrap"><table><thead id="misjudgment-columns"></thead><tbody id="misjudgment-rows"></tbody></table></div>
+<h3>分折归属与覆盖</h3><div class="table-wrap"><table><thead id="fold-columns"></thead><tbody id="fold-rows"></tbody></table></div>
+<h3>证据范围</h3><pre id="compare-details">运行比较后可查看冻结规格、发布、查看记录与分折覆盖。</pre>
+</section></main><footer>仅使用本地虚构记录；描述统计与区间不替代研究设计与业务复核。</footer><script src="/app.js"></script></body></html>
